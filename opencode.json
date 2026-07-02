@@ -15,6 +15,11 @@
       "repository": "boldsoftware/shelley",
       "branch": "main",
       "description": "Shelley is a mobile-friendly, web-based, multi-conversation, multi-modal, multi-model, single-user coding agent for exe.dev, with a Go backend, SQLite storage, and React/TypeScript UI."
+    },
+    "opentui": {
+      "repository": "anomalyco/opentui",
+      "branch": "main",
+      "description": "OpenTUI is a terminal UI framework with core, React, and Solid APIs for building rich interactive command-line interfaces."
     }
   },
   "agent": {
