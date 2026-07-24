@@ -20,6 +20,11 @@
       "repository": "anomalyco/opentui",
       "branch": "main",
       "description": "OpenTUI is a terminal UI framework with core, React, and Solid APIs for building rich interactive command-line interfaces."
+    },
+    "odysseus": {
+      "repository": "odysseus-dev/odysseus",
+      "branch": "main",
+      "description": "Odysseus is a self-hosted AI workspace for chat, agents, research, documents, email, notes, calendar, and local model workflows."
     }
   },
   "agent": {
@@ -62,11 +67,6 @@
     "render": {
       "type": "remote",
       "url": "https://mcp.render.com/mcp",
-      "enabled": true
-    },
-    "chrome-devtools": {
-      "type": "local",
-      "command": ["npx", "-y", "chrome-devtools-mcp@latest"],
       "enabled": true
     }
   }
