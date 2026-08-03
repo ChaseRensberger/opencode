@@ -28,9 +28,9 @@
     }
   },
   "agent": {
-    "friday": {
+    "wingston": {
       "mode": "primary",
-      "prompt": "{file:./prompts/friday.txt}"
+      "prompt": "{file:./prompts/wingston.txt}"
     },
     "codebase_analyze": {
       "mode": "subagent",
