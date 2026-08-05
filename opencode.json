@@ -25,6 +25,11 @@
       "repository": "odysseus-dev/odysseus",
       "branch": "main",
       "description": "Odysseus is a self-hosted AI workspace for chat, agents, research, documents, email, notes, calendar, and local model workflows."
+    },
+    "t3code": {
+      "repository": "pingdotgg/t3code",
+      "branch": "main",
+      "description": "T3 Code is an open source control plane for orchestrating coding agents across desktop, web, and mobile clients."
     }
   },
   "agent": {
