@@ -62,11 +62,22 @@ box.add(child)
 <box
   border
   title="Settings"
-  titleAlignment="center"   // left | center | right
+  titleColor="#FFCC00"          // Title text color (defaults to border color)
+  titleAlignment="center"       // left | center | right
+  bottomTitle="Press q to quit" // Title text in the bottom border
+  bottomTitleAlignment="right"  // left | center | right
 >
   Panel content
 </box>
 ```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | `string` | – | Title text in the top border |
+| `titleColor` | `string \| RGBA` | border color | Color of the title text |
+| `titleAlignment` | `"left" \| "center" \| "right"` | `"left"` | Top title position |
+| `bottomTitle` | `string` | – | Title text in the bottom border |
+| `bottomTitleAlignment` | `"left" \| "center" \| "right"` | `"left"` | Bottom title position |
 
 ### Background
 
@@ -105,8 +116,12 @@ Boxes are flex containers by default:
   paddingRight={2}
   paddingBottom={1}
   paddingLeft={2}
+  paddingX={2}              // Horizontal (left + right)
+  paddingY={1}              // Vertical (top + bottom)
   margin={1}
   marginTop={1}
+  marginX={2}               // Horizontal (left + right)
+  marginY={1}               // Vertical (top + bottom)
 >
   Spaced content
 </box>
@@ -140,6 +155,31 @@ Boxes are flex containers by default:
   Clickable box
 </box>
 ```
+
+### Focusable Boxes
+
+By default, Box elements are not focusable. Set the `focusable` prop to enable focus behavior:
+
+```tsx
+// Make a box focusable - it can receive focus via mouse click
+<box focusable border>
+  <text>Click to focus</text>
+</box>
+
+// Controlled focus state
+const [focused, setFocused] = useState(false)
+
+<box
+  focusable
+  focused={focused}
+  border
+  borderColor={focused ? "#00ff00" : "#888"}
+>
+  <text>{focused ? "Focused!" : "Not focused"}</text>
+</box>
+```
+
+When a focusable Box is clicked, focus bubbles up from the click target to the nearest focusable parent. Use `event.preventDefault()` in `onMouseDown` to prevent auto-focus.
 
 ## ScrollBox Component
 
@@ -224,7 +264,58 @@ scrollbox.scrollTo(0)           // Scroll to top
 scrollbox.scrollTo(100)         // Scroll to position
 scrollbox.scrollBy(10)          // Scroll relative
 scrollbox.scrollToBottom()      // Scroll to end
+
+// Scroll a child into view (nearest alignment)
+scrollbox.scrollChildIntoView("child-id")  // Searches descendants by ID
 ```
+
+`scrollChildIntoView(childId)` scrolls the minimum amount needed to make the identified descendant visible. It mirrors `Element.scrollIntoView({ block: "nearest" })` from the CSSOM View spec. Works with nested descendants and handles both horizontal and vertical scrolling.
+
+## ScrollBar Component
+
+A **standalone** scrollbar (separate from `scrollbox`) with optional arrows, a
+draggable thumb, and keyboard navigation. `ScrollBarRenderable` is exported from
+`@opentui/core`. Connect it to any content by wiring its size/position props.
+
+```typescript
+import { ScrollBarRenderable } from "@opentui/core"
+
+const scrollbar = new ScrollBarRenderable(renderer, {
+  id: "scrollbar",
+  orientation: "vertical",   // "vertical" | "horizontal"
+  showArrows: false,
+  scrollSize: 0,             // Total content size
+  viewportSize: 0,           // Visible size
+  scrollPosition: 0,         // Current position
+  onChange: (position) => {
+    // Sync your content to the new scroll position
+  },
+})
+
+// Drive it from your content dimensions, then focus for keyboard control
+scrollbar.scrollSize = content.length
+scrollbar.viewportSize = visibleRows
+scrollbar.scrollPosition = 0
+scrollbar.focus()
+```
+
+| Prop | Type | Default |
+|------|------|---------|
+| `orientation` | `"vertical" \| "horizontal"` | – |
+| `showArrows` | `boolean` | `false` |
+| `arrowOptions` | `ArrowOptions` | – |
+| `trackOptions` | `Partial<SliderOptions>` | – |
+| `scrollSize` | `number` | `0` |
+| `viewportSize` | `number` | `0` |
+| `scrollPosition` | `number` | `0` |
+| `scrollStep` | `number` | – |
+| `onChange` | `(position: number) => void` | – |
+
+When focused: arrows / `hjkl`, `PageUp`/`PageDown`, `Home`/`End`.
+
+> Most apps should use `scrollbox` (which embeds a scrollbar). Reach for
+> `ScrollBarRenderable` only when you need a scrollbar decoupled from a
+> `scrollbox` viewport.
 
 ## Composition Patterns
 

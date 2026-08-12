@@ -54,6 +54,148 @@ OpenTUI uses Tree-sitter for syntax highlighting. Common languages:
 />
 ```
 
+### onHighlight Callback
+
+Intercept and modify syntax highlights before rendering:
+
+```tsx
+// Core
+const codeBlock = new CodeRenderable(renderer, {
+  id: "code",
+  code: sourceCode,
+  language: "typescript",
+  onHighlight: (highlights, context) => {
+    // Add custom highlights
+    highlights.push([10, 20, "custom.error", {}])
+    return highlights
+  },
+})
+
+// React/Solid
+<code
+  code={sourceCode}
+  language="typescript"
+  onHighlight={(highlights, context) => {
+    // context: { content, filetype, syntaxStyle }
+    // Modify and return highlights array
+    return highlights.filter(h => h[2] !== "comment")
+  }}
+/>
+```
+
+**Callback signature:**
+- `highlights: SimpleHighlight[]` - Array of `[start, end, scope, metadata]`
+- `context: { content, filetype, syntaxStyle }` - Highlighting context
+- Return modified highlights array or `undefined` to use original
+
+Supports async callbacks for fetching additional highlight data.
+
+### onChunks Callback
+
+Post-process rendered text chunks after syntax highlighting. Runs after `onHighlight` and receives fully resolved chunks:
+
+```tsx
+// Core
+const codeBlock = new CodeRenderable(renderer, {
+  id: "code",
+  code: sourceCode,
+  language: "typescript",
+  onChunks: (chunks, context) => {
+    // Transform chunks (e.g., add link detection)
+    return chunks
+  },
+})
+
+// React/Solid
+<code
+  code={sourceCode}
+  language="typescript"
+  onChunks={(chunks, context) => {
+    // context: { content, filetype, syntaxStyle, highlights }
+    return chunks
+  }}
+/>
+```
+
+### Link Detection Utility
+
+Auto-detect URLs in code and add clickable hyperlinks:
+
+```typescript
+import { detectLinks } from "@opentui/core"
+
+<code
+  code={sourceCode}
+  language="typescript"
+  onChunks={(chunks, context) => detectLinks(chunks, context)}
+/>
+```
+
+`detectLinks` examines Tree-sitter highlights to find URL tokens and sets `chunk.link` on matching chunks. Supports async usage.
+
+## TextTable Component
+
+Render data tables with borders, word wrapping, and selection support.
+
+### Basic Usage
+
+```typescript
+// Core
+import { TextTableRenderable, type TextTableContent } from "@opentui/core"
+
+const content: TextTableContent = [
+  [[ { text: "Name" } ], [ { text: "Age" } ], [ { text: "Role" } ]],
+  [[ { text: "Alice" } ], [ { text: "30" } ], [ { text: "Engineer" } ]],
+  [[ { text: "Bob" } ], [ { text: "25" } ], [ { text: "Designer" } ]],
+]
+
+const table = new TextTableRenderable(renderer, {
+  id: "table",
+  content,
+  wrapMode: "word",           // "none" | "char" | "word"
+  columnWidthMode: "content", // "content" | "fill"
+  cellPadding: 0,
+  border: true,
+  outerBorder: true,
+  borderStyle: "single",      // single | double | rounded | bold
+  selectable: true,           // Allow text selection
+  columnFitter: "balanced",   // "proportional" | "balanced"
+})
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `content` | `TextTableContent` | - | 2D array of cell content |
+| `wrapMode` | `"none" \| "char" \| "word"` | `"none"` | Text wrapping in cells |
+| `columnWidthMode` | `"content" \| "fill"` | `"content"` | Column sizing strategy |
+| `cellPadding` | `number` | `0` | Padding inside cells |
+| `border` | `boolean` | `true` | Show inner borders |
+| `outerBorder` | `boolean` | `true` | Show outer borders |
+| `borderStyle` | `string` | `"single"` | Border style |
+| `borderColor` | `string \| RGBA` | - | Border color |
+| `selectable` | `boolean` | `false` | Allow text selection |
+| `columnFitter` | `"proportional" \| "balanced"` | `"proportional"` | Column width distribution |
+
+### Cell Content Format
+
+Each cell is an array of styled text chunks:
+
+```typescript
+type TextTableCellContent = { text: string; fg?: RGBA; bg?: RGBA }[]
+type TextTableContent = TextTableCellContent[][]  // rows -> cells -> chunks
+```
+
+### Selection
+
+```typescript
+table.getSelectedText()  // Get selected text
+table.hasSelection()     // Check if text is selected
+```
+
+Columnar selection is supported: dragging vertically within a single column selects only that column's content.
+
 ## Line Number Component
 
 Code display with line numbers, highlighting, and diagnostics.
@@ -214,6 +356,32 @@ const diffView = new DiffRenderable(renderer, {
 />
 ```
 
+### Synchronized Scrolling (Split View)
+
+In split view, enable synchronized scrolling between left and right panes:
+
+```tsx
+// React/Solid
+<diff
+  oldCode={old}
+  newCode={new}
+  mode="split"
+  syncScroll              // Scrolling one pane syncs the other
+/>
+
+// Core
+const diffView = new DiffRenderable(renderer, {
+  id: "diff",
+  diff: unifiedDiff,
+  view: "split",
+  syncScroll: true,
+})
+
+// Toggle at runtime
+diffView.syncScroll = true
+diffView.syncScroll = false
+```
+
 ### Options
 
 ```tsx
@@ -238,6 +406,193 @@ const diffView = new DiffRenderable(renderer, {
   unchangedLineColor="transparent"
 />
 ```
+
+### Line Highlighting API (Core)
+
+Programmatically highlight specific lines in a diff:
+
+```typescript
+// Set a single line's color
+diffView.setLineColor(5, "#2d4f2d")
+diffView.setLineColor(5, { gutter: "#333", content: "#2d4f2d" })
+
+// Clear a single line's color
+diffView.clearLineColor(5)
+
+// Set multiple lines at once
+diffView.setLineColors(new Map([
+  [1, "#2d4f2d"],
+  [2, "#4f2d2d"],
+]))
+
+// Highlight a range
+diffView.highlightLines(10, 20, "#2d4f2d")
+diffView.clearHighlightLines(10, 20)
+
+// Clear all line colors
+diffView.clearAllLineColors()
+```
+
+The `LineNumberRenderable` also supports programmatic highlighting:
+
+```typescript
+lineNumberView.highlightLines(5, 10, "#2d4f2d")
+lineNumberView.clearHighlightLines(5, 10)
+```
+
+### Hunk Navigation (Core)
+
+`getHunkRowOffsets()` returns the visual row offset (0-based, accounting for
+wrapping and concealed lines) where each diff hunk begins, in hunk order. Works
+in both `"unified"` and `"split"` views.
+
+```typescript
+const offsets = diffView.getHunkRowOffsets()  // number[]
+
+// Jump to the next hunk below the current scroll position
+const next = offsets.find((row) => row > diffView.scrollTop)
+if (next !== undefined) diffView.scrollTop = next
+
+// Jump to the previous hunk
+const prev = [...offsets].reverse().find((row) => row < diffView.scrollTop)
+if (prev !== undefined) diffView.scrollTop = prev
+```
+
+The result is cached and invalidated when the view rebuilds, `wrapMode` changes,
+or line info changes.
+
+## Markdown Component
+
+Render markdown content with syntax highlighting for code blocks.
+
+### Basic Usage
+
+```tsx
+// React
+<markdown
+  content={markdownText}
+  syntaxStyle={mySyntaxStyle}
+/>
+
+// Solid
+<markdown
+  content={markdownText}
+  syntaxStyle={mySyntaxStyle}
+/>
+
+// Core
+import { MarkdownRenderable } from "@opentui/core"
+
+const md = new MarkdownRenderable(renderer, {
+  id: "markdown",
+  content: "# Hello\n\nThis is **markdown**.",
+  syntaxStyle: mySyntaxStyle,
+})
+```
+
+### Options
+
+```tsx
+<markdown
+  content={markdownText}
+  syntaxStyle={syntaxStyle}    // Required
+  treeSitterClient={client}    // Optional: custom tree-sitter client
+  conceal={true}               // Hide markdown syntax characters (default true)
+  concealCode={false}          // Conceal code fences too (default false)
+  streaming={true}             // Enable streaming mode for incremental updates
+  internalBlockMode="coalesced" // "coalesced" (default) | "top-level"
+  tableOptions={{              // Customize markdown table rendering
+    style: "columns",          // "grid" | "columns"
+    widthMode: "full",         // "content" | "full"
+    wrapMode: "word",          // "none" | "char" | "word"
+    cellPadding: 0,
+    borders: true,
+    outerBorder: true,
+    borderStyle: "single",
+    borderColor: "#555",
+    selectable: true,          // Tables are selectable by default
+  }}
+/>
+```
+
+**`internalBlockMode`**: `"top-level"` keeps each top-level block (heading,
+paragraph, list, table, fenced code) as its own child renderable — required for
+row-by-row committing of streamed output and for stable-block tracking. The
+default `"coalesced"` folds siblings together (historical layout). When set to
+`"top-level"`, `markdown._stableBlockCount` reports how many head-of-stream
+blocks are currently stable.
+
+### Custom Node Rendering
+
+```tsx
+// Core
+const md = new MarkdownRenderable(renderer, {
+  id: "markdown",
+  content: "# Custom Heading",
+  syntaxStyle,
+  renderNode: (node, ctx, defaultRender) => {
+    if (node.type === "heading") {
+      // Return custom renderable for headings
+      return new TextRenderable(ctx, {
+        content: `>> ${node.content} <<`,
+      })
+    }
+    return null // Use default rendering
+  },
+})
+```
+
+### Custom Code Block Renderers
+
+`createMarkdownCodeBlockRenderer` builds a `renderNode` that only overrides
+fenced code blocks, keyed by the **normalized** fence info string (e.g. `tsx` →
+`typescriptreact`; custom names like `taskflow` match directly):
+
+```typescript
+import { createMarkdownCodeBlockRenderer, MarkdownRenderable } from "@opentui/core"
+
+const renderNode = createMarkdownCodeBlockRenderer({
+  mermaid: (token, ctx) => renderMermaidDiagram(ctx, token.text),
+  taskflow: (token, ctx) => renderTaskflow(ctx, token.text),
+})
+
+const md = new MarkdownRenderable(renderer, {
+  id: "markdown",
+  content,
+  syntaxStyle,
+  renderNode,  // Only the matched fences are replaced; others render normally
+})
+```
+
+Each renderer receives `(token: Tokens.Code, context: RenderNodeContext)` and
+returns a `Renderable`, or `undefined`/`null` to fall back to default rendering.
+
+### Streaming Mode
+
+For real-time content like LLM output:
+
+```tsx
+const [content, setContent] = useState("")
+
+// Append text as it arrives
+useEffect(() => {
+  llmStream.on("token", (token) => {
+    setContent(c => c + token)
+  })
+}, [])
+
+<markdown
+  content={content}
+  syntaxStyle={syntaxStyle}
+  streaming={true}  // Optimizes for incremental updates
+/>
+```
+
+In Core, set `markdown.streaming = true` while appending chunks (assign or `+=`
+to `markdown.content`; each change reparses incrementally). Set
+`markdown.streaming = false` when the stream completes to finalize trailing
+block parsing. Use `internalBlockMode: "top-level"` if you need per-block commit
+boundaries (`markdown._stableBlockCount`).
 
 ## Use Cases
 
