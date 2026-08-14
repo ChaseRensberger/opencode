@@ -35,14 +35,7 @@
   "agents": {
     "wingston": {
       "mode": "primary",
-      "color": "primary",
       "system": "{file:./prompts/wingston.txt}"
-    },
-    "plan": {
-      "color": "primary"
-    },
-    "build": {
-      "color": "primary"
     },
     "codebase_analyze": {
       "mode": "subagent",
