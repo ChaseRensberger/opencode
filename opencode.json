@@ -33,9 +33,9 @@
     }
   },
   "agents": {
-    "wingston": {
+    "assist": {
       "mode": "primary",
-      "system": "{file:./prompts/wingston.txt}"
+      "system": "{file:./prompts/assist.txt}"
     },
     "codebase_analyze": {
       "mode": "subagent",
