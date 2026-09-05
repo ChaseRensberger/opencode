@@ -61,7 +61,7 @@
     "servers": {
       "chrome-devtools": {
         "type": "local",
-        "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--headless"]
+        "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--headless", "--executablePath", "/usr/bin/chromium"]
       }
     }
   }
